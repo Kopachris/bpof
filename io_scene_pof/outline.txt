@@ -23,6 +23,8 @@ bool thruster_points
 bool glow_points
 bool flash_points
 bool special_points
+bool dock_points
+bool acen
 bool header_data
 
 # On import, the full filepath should be stored as scene['Original file'].  This will be used as

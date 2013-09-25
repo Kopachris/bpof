@@ -76,6 +76,11 @@ class ImportPOF(bpy.types.Operator, ImportHelper):
             description="Import path points as empties.",
             default=True,
             )   # Imported as sphere empties parented to first point in path
+    import_docks = BoolProperty(
+            name="Import docks",
+            description="Import docking points as empties.",
+            default=True,
+            )
     import_gun_points = BoolProperty(
             name="Import guns",
             description="Import gun points as empties.",
@@ -106,16 +111,21 @@ class ImportPOF(bpy.types.Operator, ImportHelper):
             description="Import glow points as empties.",
             default=True,
             )   # Imported as sphere empties
-##    import_flash_points = BoolProperty(
-##            name="Import muzzleflashes",
-##            description="Import muzzleflash lights as empties.",
-##            default=True,
-##            )   # Imported as regular empties
+    import_flash_points = BoolProperty(
+            name="Import muzzleflashes",
+            description="Import muzzleflash lights as empties.",
+            default=True,
+            )   # Imported as regular empties
     import_special_points = BoolProperty(
             name="Import special points",
             description="Import special points as empties.",
             default=True,
             )   # Imported as sphere empties
+    import_acen = BoolProperty(
+            name="Import autocenter point",
+            description="Import autocenter point (for tech room) as empty.",
+            default=False,
+            )
     import_header_data = BoolProperty(
             name="Import header",
             description="Import extra header data as scene custom properties.",
@@ -150,6 +160,11 @@ class ImportPOF(bpy.types.Operator, ImportHelper):
     import_specials = BoolProperty(
             name="Import subsystems",
             description="Import special objects (subsystems).",
+            default=True,
+            )
+    import_insignia = BoolProperty(
+            name="Import insignia",
+            description="Import squad insignia.",
             default=True,
             )
     fore_is_y = BoolProperty(
@@ -202,12 +217,15 @@ class ImportPOF(bpy.types.Operator, ImportHelper):
 
         box = layout.box()
         box.label(text="Helpers")
+        box.prop(self, "import_acen")
         box.prop(self, "import_eye_points")
         box.prop(self, "import_paths")
+        box.prop(self, "import_docks")
         box.prop(self, "import_gun_points")
         box.prop(self, "import_mis_points")
         box.prop(self, "import_tgun_points")
         box.prop(self, "import_tmis_points")
+        box.prop(self, "import_flash_points")
         box.prop(self, "import_thrusters")
         box.prop(self, "import_glow_points")
         box.prop(self, "import_special_points")
@@ -221,6 +239,7 @@ class ImportPOF(bpy.types.Operator, ImportHelper):
             box.prop(self, "import_debris")
             box.prop(self, "import_turrets")
             box.prop(self, "import_specials")
+            box.prop(self, "import_insignia")
         box.prop(self, "import_shields")
 
         box = layout.box()
@@ -242,6 +261,115 @@ class ExportPOF(bpy.types.Operator, ExportHelper):
             default="*.pof",
             options={'HIDDEN'},
             )
+    fore_is_y = BoolProperty(
+            name="Switch axes",
+            description="If true, fore is Blender's +Y-axis.",
+            default=True,
+            )
+    export_subobjects = BoolProperty(
+            name="Export subobjects",
+            description="Export subobject data.  Does not necessarily include geometry!",
+            default=True,
+            )
+    export_geometry = BoolProperty(
+            name="Export geometry",
+            description="Export geometry (including shields and insignia), making BSP and "
+              "shield collision trees.",
+            default=True,
+            )
+    export_textures = BoolProperty(
+            name="Export textures",
+            description="Export TXTR chunk based on materials in this scene.",
+            default=True,
+            )
+    export_eyes = BoolProperty(
+            name="Export viewpoints",
+            description="Eye points must be empties named starting with 'eye' parented to a valid"
+              " submodel.",
+            default=True,
+            )
+    export_paths = BoolProperty(
+            name="Export paths",
+            description="Paths must be a collection of empties named starting with 'path', with the"
+              " first node parented to a valid submodel and other nodes parented to the first node"
+              "  Size of the empty will also be exported.",
+            default=True,
+            )
+    export_dock_points = BoolProperty(
+            name="Export dock points",
+            description="Docking points must empties named starting with 'dock'.  All docking points"
+              " that are parented to a given object will be considered one dock, and the parent will"
+              " not be exported, though the parent should include custom properties 'Properties' "
+              "and 'Path', which will be exported.  Each point's normal will also be exported.",
+              default=True,
+              )
+    export_gun_points = BoolProperty(
+            name="Export gun points",
+            description="Gun points should be empties named starting with 'gun'.  All gun points "
+              "that are parented to a given object will be considered one gun bank, and the parent "
+              "will not be exported.  Normal of the empty will be exported.",
+            default=True,
+            )
+    export_mis_points = BoolProperty(
+            name="Export missile points",
+            description="Missile points should be empties named starting with 'mis'.  All missile points "
+              "that are parented to a given object will be considered one missile bank, and the "
+              "parent will not be exported.  Normal of the empty will be exported.",
+            default=True,
+            )
+    export_tgun_points = BoolProperty(
+            name="Export turret gun points",
+            description="Turret guns should be empties named starting with 'tgun'.  They should be "
+              "parented to their turret (or turret arm if multi-part turret).  Normal of the empty "
+              "will also be exported.",
+            default=True,
+            )
+    export_tmis_points = BoolProperty(
+            name="Export turret missile points",
+            description="Turret guns should be empties named starting with 'tmis'.  They should be "
+              "parented to their turret (or turret arm if multi-part turret).  Normal of the empty "
+              "will also be exported.",
+            default=True,
+            )
+    export_flash_points = BoolProperty(
+            name="Export muzzleflash poins",
+            description="Muzzleflash points should be empties named starting with 'muz'.  Only "
+              "location and a custom property 'Type' will be exported.",
+            default=True,
+            )
+    export_thruster_points = BoolProperty(
+            name="Export thruster points",
+            description="Thrusters should be empties named starting with 'thrust'.  All thruster "
+              "points that are parented to a given object will be considered one thruster (a set "
+              "of thruster glows), and the parent will not be exported.  Radius and normal of "
+              "the empty will be exported.",
+            default=True,
+            )
+    export_glow_points = BoolProperty(
+            name="Export glow points",
+            description="Glow points should be empties named starting with 'glow'.  All glows "
+              "that are parented to a given object will be considered one glowbank, and the parent"
+              " will not be exported.  Radius, normal, and additional properties will be exported.",
+            default=True,
+            )
+    export_special_points = BoolProperty(
+            name="Export special points",
+            description="All empties not otherwise covered by other options will be exported as "
+              "special points, which can be used as subsystems, depending on how they're named.  "
+              "Size and custom property 'Properties' will also be exported.",
+            default=True,
+            )
+    export_acen = BoolProperty(
+            name="Export autocenter point",
+            description="Autocenter point for tech room should be an empty named starting with 'acen'.",
+            default=True,
+            )
+    export_header_data = BoolProperty(
+            name="Export header data",
+            description="Header data should be scene custom properties.",
+            default=True,
+            )
+
 
     def execute(self, context):
         from . import export_pof
