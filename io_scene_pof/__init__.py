@@ -231,22 +231,48 @@ class ImportPOF(bpy.types.Operator, ImportHelper):
         box.prop(self, "pretty_materials")
 
 
+class ExportPOF(bpy.types.Operator, ExportHelper):
+    """Export a FS2_Open POF File"""
+    bl_idname = "export_scene.pof"
+    bl_label = "Export POF"
+    bl_options = {'PRESET', 'UNDO'}
+
+    filename_ext = ".pof"
+    filter_glob = StringProperty(
+            default="*.pof",
+            options={'HIDDEN'},
+            )
+
+    def execute(self, context):
+        from . import export_pof
+
+        keywords = self.as_keywords(ignore=("filter_glob",))
+        return export_pof.export(self, context, **keywords)
+        
+    def draw(self, context):
+        pass
+
+
 def menu_func_import(self, context):
     self.layout.operator(ImportPOF.bl_idname, text="Parallax Object File (.pof)")
+
+
+def menu_func_export(self, context):
+    self.layout.operator(ExportPOF.bl_idname, text="Parallax Object File (.pof)")
 
 
 def register():
     bpy.utils.register_module(__name__)
 
     bpy.types.INFO_MT_file_import.append(menu_func_import)
-    #bpy.types.INFO_MT_file_export.append(menu_func_export)
+    bpy.types.INFO_MT_file_export.append(menu_func_export)
 
 
 def unregister():
     bpy.utils.unregister_module(__name__)
 
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
-   # bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
     register()

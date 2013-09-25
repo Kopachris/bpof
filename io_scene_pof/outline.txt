@@ -1,3 +1,37 @@
+Export options
+================
+# Note: most of these options will be ignored and assumed true if
+# the output file doesn't already exist
+
+bool subobjects			# export SOBJ chunks
+	(select all, select none)
+	for mesh in scene:
+		bool <mesh.name>
+	bool geometry		# build bsp trees from meshes
+bool textures
+	# export list of blender images (indexed by material list) as TXTR chunk
+	# On export, make an OrderedDict out of the material list {texName: order}.  That order
+	# will be used in the TXTR chunk.  On geometry export, for each face, 
+	# tex_id is mat_dict[mesh.materials[face.material_id]]
+bool eyes
+bool paths
+bool gun_points
+bool mis_points
+bool t_gun_points
+bool t_mis_points
+bool thruster_points
+bool glow_points
+bool flash_points
+bool special_points
+bool header_data
+
+# On import, the full filepath should be stored as scene['Original file'].  This will be used as
+# the default filepath on export.  The point of this is to make it simple enough to open a POF in
+# Blender, change a few things (say, add a path, or remove some gunpoints, or change the mass)
+# without changing any geometry, then re-saving to the same file.
+# This may not be faster than using PCS2.  I hope once the pof code is optimized using
+# Cython, it will be just as fast or faster than using PCS2.
+
 Import options
 ================
 

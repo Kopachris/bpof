@@ -36,8 +36,9 @@ from bpy_extras.io_utils import unpack_list, unpack_face_list
 from . import pof
 
 
-def create_mesh(bm, fore_is_y):
+def create_mesh(bm, fore_is_y, bmats):
     """Takes a Blender mesh and returns a Volition mesh."""
+    # Mesh will be added to SOBJ chunk somewhere else
     verts = list()
     vnorms = OrderedDict()
     for v in bm.vertices:
@@ -64,8 +65,9 @@ def create_mesh(bm, fore_is_y):
             these_norms.append(vnorms[this_coord].index(this_norm))
         faces.append(this_face)
         fvnorms.append(these_norms)
-        centers.append(tuple(f.center))
-        tex_ids.append(f.material_index)
+        centers.append(tuple(f.center)) 
+        # in case not all mats are linked to mesh:
+        tex_ids.append(bmats[bm.materials[f.material_index]])
         fnorms.append(tuple(f.normal))
 
     m = pof.Mesh()
@@ -81,3 +83,7 @@ def create_mesh(bm, fore_is_y):
         m.flip_yz()
 
     return m
+
+
+def execute(operator, context, filepath):
+    pass
