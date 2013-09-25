@@ -19,9 +19,6 @@
 ## POF module
 ## Copyright (c) 2012 by Christopher Koch
 
-"""This module contains classes and methods for handling "Parallax Object Format" (POF) files, including geometry helper classes for mesh data."""
-
-## No guarantees about pep8 compliance
 
 
 from math import fsum, sqrt
