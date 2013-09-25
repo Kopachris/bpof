@@ -152,11 +152,6 @@ class ImportPOF(bpy.types.Operator, ImportHelper):
             description="Import special objects (subsystems).",
             default=True,
             )
-##    import_special_debris = BoolProperty(
-##            name="Import subsystem debris",
-##            description="Import special object debris.",
-##            default=True,
-##            )   # If debris selected, will import these on the same layer
     fore_is_y = BoolProperty(
             name="Switch axes",
             description="If true, fore is Blender's +Y-axis.",
