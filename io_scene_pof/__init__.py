@@ -282,7 +282,7 @@ class ExportPOF(bpy.types.Operator, ExportHelper):
             description="Export TXTR chunk based on materials in this scene.",
             default=True,
             )
-    export_eyes = BoolProperty(
+    export_eye_points = BoolProperty(
             name="Export viewpoints",
             description="Eye points must be empties named starting with 'eye' parented to a valid"
               " submodel.",
@@ -378,7 +378,37 @@ class ExportPOF(bpy.types.Operator, ExportHelper):
         return export_pof.export(self, context, **keywords)
         
     def draw(self, context):
-        pass
+        layout = self.layout
+
+        layout.prop(self, "export_header_data")
+        layout.prop(self, "fore_is_y")
+
+        box = layout.box()
+        box.label(text="Meshes")
+        box.prop(self, "export_subobjects")
+        if self.export_subobjects:
+            box.prop(self, "export_geometry")
+        box.prop(self, "export_textures")
+
+        box = layout.box()
+        box.label(text="Points")
+        box.prop(self, "export_eye_points")
+        box.prop(self, "export_thruster_points")
+        box.prop(self, "export_glow_points")
+        box.prop(self, "export_special_points")
+
+        box = layout.box()
+        box.label(text="Paths")
+        box.prop(self, "export_paths")
+        box.prop(self, "export_dock_points")
+
+        box = layout.box()
+        box.label(text="Guns")
+        box.prop(self, "export_gun_points")
+        box.prop(self, "export_mis_points")
+        box.prop(self, "export_tgun_points")
+        box.prop(self, "export_tmis_points")
+        box.prop(self, "export_flash_points")
 
 
 def menu_func_import(self, context):
