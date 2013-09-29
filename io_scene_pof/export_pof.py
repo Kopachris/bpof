@@ -85,5 +85,22 @@ def create_mesh(bm, fore_is_y, bmats):
     return m
 
 
-def execute(operator, context, filepath):
+def execute(operator, context, filepath,
+            export_header_data=True,
+            fore_is_y=True,
+            export_subobjects=True,
+            export_geometry=True,
+            export_textures=True,
+            export_eye_points=True,
+            export_thruster_points=True,
+            export_glow_points=True,
+            export_special_points=True,
+            export_paths=True,
+            export_dock_points=True,
+            export_gun_points=True,
+            export_mis_points=True,
+            export_tgun_points=True,
+            export_tmis_points=True,
+            export_flash_points=True,
+            ):
     pass
