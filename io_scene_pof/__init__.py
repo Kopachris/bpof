@@ -374,13 +374,14 @@ class ExportPOF(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         from . import export_pof
 
-        keywords = self.as_keywords(ignore=("filter_glob",))
+        keywords = self.as_keywords(ignore=("filter_glob","check_existing",))
         return export_pof.export(self, context, **keywords)
         
     def draw(self, context):
         layout = self.layout
 
         layout.prop(self, "export_header_data")
+        layout.prop(self, "export_acen")
         layout.prop(self, "fore_is_y")
 
         box = layout.box()

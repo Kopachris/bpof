@@ -144,7 +144,27 @@ def vdist(a, b):
     y2 = b[1]
     z1 = a[2]
     z2 = b[2]
+
     return sqrt((x1 - x2)**2 + (y1 - y2)**2 + (z1 - z2)**2)
+
+
+def vavg(vecs):
+    """
+    Given an iterable of vectors, return their average
+    """
+    vx = list()
+    vy = list()
+    vz = list()
+    n = len(vecs)
+    for v in vecs:
+        vx.append(v[0])
+        vy.append(v[1])
+        vz.append(v[2])
+    ax = fsum(vx) / n
+    ay = fsum(vy) / n
+    az = fsum(vz) / n
+
+    return ax, ay, az
 
 
 class Mesh:
@@ -247,6 +267,7 @@ class Mesh:
             num = a * b * c
             denom = sqrt(2 * a2 * b2 + 2 * b2 * c2 + 2 * c2 * a2 - a4 - b4 - c4)
             fradii.append(num/denom)
+        self.fradii = fradii
 
     def flip_yz(self):
         """
@@ -286,7 +307,7 @@ class PolyModel:
     # I want this class to contain methods for getting and
     # setting various objects (e.g. paths) once we get classes
     # for those objects.
-    def __init__(self, chunks, pof_ver):
+    def __init__(self, chunks, pof_ver=2117):
         self.pof_ver = pof_ver
         self.chunks = dict()
         self.submodels = dict()
@@ -316,6 +337,19 @@ class PolyModel:
             chunk_list.insert(i, chunk)
             i += 1
         return chunk_list
+    
+    def update_pof(self, chunks, submodels=None, pof_ver=None):
+        if pof_ver is not None:
+            self.pof_ver = pof_ver
+        for chunk in chunks:
+            self.chunks[chunk.CHUNK_ID] = chunk
+        if submodels is not None:
+            for chunk in submodels:
+                cur_chunk = self.submodels[chunk.model_id]
+                cur_bsp = cur_chunk.bsp_tree
+                if chunk.bsp_tree is None:
+                    chunk.bsp_tree = cur_bsp
+                self.submodels[chunk.model_id] = chunk
 
     def verify_pof(self, pof_ver=None):
         if pof_ver is None:
@@ -458,8 +492,8 @@ class PolyModel:
             if len(chunks["GPNT"].gun_points) > 3:
                 raise InvalidChunkError(chunks["GPNT"], "Primary weapons has more than three slots")
         if "MPNT" in chunks:
-            if len(chunks["MPNT"].gun_points) > 2:
-                raise InvalidChunkError(chunks["MPNT"], "Secondary weapons has more than two slots")
+            if len(chunks["MPNT"].gun_points) > 3:
+                raise InvalidChunkError(chunks["MPNT"], "Secondary weapons has more than three slots")
 
         # verify tgun/tmis
 
@@ -1559,25 +1593,37 @@ class ModelChunk(POFChunk):
         defpoints.set_mesh(m)
         self._defpoints = defpoints
 
+        # unzip m.uv
+        u = list()
+        v = list()
+        for i, f in enumerate(m.uv):
+            u.append(list())
+            v.append(list())
+            for co in f:
+                u[i].append(co[0])
+                v[i].append(co[1])
+
         # make initial polylist
         face_list = list()
-        for i, f in enumerate(m.face_list):
+        for i, f in enumerate(m.faces):
             cur_node = TexpolyBlock()
             cur_node.normal = m.fnorms[i]
             cur_node.center = m.centers[i]
             cur_node.radius = m.fradii[i]
             cur_node.texture_id = m.tex_ids[i]
             cur_node.vert_list = f
-            cur_node.norm_list = m.vnorms[i]
-            cur_node.u = m.u[i]
-            cur_node.v = m.v[i]
+            cur_node.norm_list = m.fvnorms[i]
+            cur_node.u = u[i]
+            cur_node.v = v[i]
 
             face_list.append(cur_node)
         max_pnt, min_pnt = self._get_bounds(face_list)
-        ctr_pnt = self._get_split_plane(face_list)
+        ctr_pnt = self._get_split_plane(max_pnt, min_pnt)
         self.max = max_pnt
         self.min = min_pnt
         self.center = ctr_pnt[0]
+        #self.center = m.obj_ctr
+        self.radius = vdist(self.max, self.center)
         self.bsp_tree = list()
         self._generate_tree_recursion(face_list)
         self.bsp_tree.insert(0, self._defpoints)
@@ -2083,10 +2129,17 @@ class TreeChunk(POFChunk):
             else:
                 raise InvalidChunkError(self, "Must have either shield chunk or mesh")
 
-        face_list = m.face_list     # Hopefully the same index as the shield chunk
+        face_list = m.faces     # Hopefully the same index as the shield chunk
+        vert_list = m.verts
+        faces = list()
+        for i, f in enumerate(face_list):
+            verts = list()
+            for v in f:
+                verts.append(vert_list[v])
+            faces.append(ShieldFace(verts, i))
 
         self.shield_tree = list()
-        self._generate_tree_recursion(face_list)
+        self._generate_tree_recursion(faces)
 
     def _add_faces(self, face_list):
         cur_node = ShieldLeaf()
@@ -2113,9 +2166,9 @@ class TreeChunk(POFChunk):
         verts_z = list()
         for f in face_list:
             for v in f.vert_list:
-                verts_x.append(v.co[0])
-                verts_y.append(v.co[1])
-                verts_z.append(v.co[2])
+                verts_x.append(v[0])
+                verts_y.append(v[1])
+                verts_z.append(v[2])
         max_x = max(verts_x) + 0.1
         max_y = max(verts_y) + 0.1
         max_z = max(verts_z) + 0.1
@@ -2291,6 +2344,13 @@ class ShieldLeaf:
 
     def __len__(self):
         return 33 + 4 * len(self.face_list)
+
+
+class ShieldFace:
+    def __init__(self, verts, idx):
+        self.vert_list = verts
+        self.center = vavg(verts)
+        self.face_idx = idx
 
 
 class EndBlock(POFChunk):

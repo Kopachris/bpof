@@ -255,7 +255,7 @@ def load(operator, context, filepath,
                 this_txtr = bpy.data.textures.new(img.name + '-txtr', type='IMAGE')
                 this_txtr.image = img
                 this_txtr.use_alpha = True
-                this_mat = bpy.data.materials.new(img.name + '-mat')
+                this_mat = bpy.data.materials.new(img.name.rsplit('.', 1)[0])
                 mat_txtr = this_mat.texture_slots.add()
                 mat_txtr.texture = this_txtr
                 mat_txtr.texture_coords = 'UV'

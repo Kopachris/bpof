@@ -189,6 +189,8 @@ def pack_byte(x):
             p += pack('b', i)
     except TypeError:
         p = pack('b', x)
+    except IndexError:
+        p = b''
 
     return p
 
@@ -204,6 +206,8 @@ def pack_ubyte(x):
             p += pack('b', i)
     except TypeError:
         p = pack('B', x)
+    except IndexError:
+        p = b''
 
     return p
 
@@ -219,6 +223,8 @@ def pack_short(x):
             p += pack('h', i)
     except TypeError:
         p = pack('h', x)
+    except IndexError:
+        p = b''
 
     return p
 
@@ -234,6 +240,8 @@ def pack_ushort(x):
             p += pack('H', i)
     except TypeError:
         p = pack('H', x)
+    except IndexError:
+        p = b''
 
     return p
 
@@ -249,6 +257,8 @@ def pack_int(x):
             p += pack('i', i)
     except TypeError:
         p = pack('i', x)
+    except IndexError:
+        p = b''
 
     return p
 
@@ -264,6 +274,8 @@ def pack_uint(x):
             p += pack('I', i)
     except TypeError:
         p = pack('I', x)
+    except IndexError:
+        p = b''
 
     return p
 
@@ -279,6 +291,8 @@ def pack_float(x):
             p += pack('f', i)
     except TypeError:
         p = pack('f', x)
+    except IndexError:
+        p = b''
 
     return p
 
@@ -286,7 +300,7 @@ def pack_string(x):
 
     # int with length of string followed by chars
 
-    u = bytes(x)
+    u = bytes(x, 'UTF-8')
     p = pack('i', len(u))
     p += u
 
