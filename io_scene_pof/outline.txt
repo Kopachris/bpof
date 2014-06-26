@@ -1,3 +1,27 @@
+Global todo: (# = done)
+=========================
+change vertex norms to be indexed in global list rather than per vert
+    pof.py
+        #*Fixed defpoints.write_chunk() to use mesh.vnorms_by_vert
+        #*Need to fix defpoints.read_chunk()
+    import_pof.py
+    export_pof.py
+        #*Added new list mesh.vnorms_by_vert
+
+Export todo: (# = done)
+=========================
+eye_objs
+thruster_objs
+path_objs
+dock_objs
+gun_objs
+mis_objs
+tgun_objs
+tmis_objs
+#flash_objs (header)
+acen_obj
+#mass_ctr (header)
+
 Export options
 ================
 # Note: most of these options will be ignored and assumed true if
@@ -107,3 +131,4 @@ import_textures
 if import_textures:
 	texture_path
 make_materials
+

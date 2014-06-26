@@ -2388,12 +2388,20 @@ class DefpointsBlock(POFChunk):
 
         for i in range(num_verts):
             vert_list.append(unpack_vector(bin_data.read(12)))
-            vert_norms.append(list())
+            #vert_norms.append(list())
             for j in range(norm_counts[i]):
-                vert_norms[i].append(unpack_vector(bin_data.read(12)))
+                #vert_norms[i].append(unpack_vector(bin_data.read(12)))
+                this_norm = unpack_vector(bin_data.read(12))
+                if this_norm not in vert_norms:
+                    vert_norms.append(this_norm)
+                    vnorms_by_vert[i].append(len(vert_norms) - 1)
+                else:
+                    vnorms_by_vert[i].append(vert_norms.index(this_norm))
+                #vert_norms.append(unpack_vector(bin_data.read(12)))
 
         self.vert_list = vert_list
-        self.vert_norms = vert_norms
+        self.vnorms = vert_norms
+        self.vnorms_by_vert = vnorms_by_vert
 
     def write_chunk(self):
         chunk = pack_int(self.CHUNK_ID)
@@ -2404,25 +2412,27 @@ class DefpointsBlock(POFChunk):
             return False
 
         vert_list = self.vert_list
-        vert_norms = self.vert_norms
+        vnorms = self.vnorms
+        vnorms_by_vert = self.vnorms_by_vert
         num_verts = len(vert_list)
-        num_norms = 0
+        num_norms = len(vnorms)
         vert_data_offset = 20 + num_verts
-
-        for v in vert_norms:
-            num_norms += len(v)
 
         chunk += pack_int(num_verts)
         chunk += pack_int(num_norms)
         chunk += pack_int(vert_data_offset)
 
-        for v in vert_norms:
+        for v in vnorms_by_vert:
             chunk += pack_byte(len(v))      # norm counts
 
-        for i, v in enumerate(vert_norms):
+        #for i, v in enumerate(vert_norms):
+            #chunk += pack_float(vert_list[i])
+            #for n in v:
+                #chunk += pack_float(n)
+        for i, v in enumerate(vnorms_by_vert):
             chunk += pack_float(vert_list[i])
             for n in v:
-                chunk += pack_float(n)
+                chunk += pack_float(vnorms[n])
 
         return chunk
 
@@ -2431,12 +2441,14 @@ class DefpointsBlock(POFChunk):
             m = Mesh()
         m.verts = self.vert_list
         m.num_norms = self.norm_counts
-
+        m.vnorms = self.vnorms
+        m.vnorms_by_vert = self.vnorms_by_vert
         return m
 
     def set_mesh(self, m):
         self.vert_list = m.verts
-        self.vert_norms = m.vnorms
+        self.vnorms = m.vnorms
+        self.vnorms_by_vert = m.vnorms_by_vert
 
     def __len__(self):
         chunk_length = 20

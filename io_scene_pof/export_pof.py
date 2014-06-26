@@ -42,13 +42,17 @@ def create_mesh(bm, fore_is_y, bmats):
     bm.calc_tessface()
     m = pof.Mesh()
     verts = list()
-    vnorms = OrderedDict()
+    vnorms = list()
+    vnorms_by_vert = list()
     for v in bm.vertices:
         co = tuple(v.co)
+        vn = tuple(v.normal)
         if co not in verts:
             verts.append(co)
-            vnorms[co] = list()
-        vnorms[co].append(tuple(v.normal))
+            vnorms_by_vert.append(list())
+        if vn not in vnorms:
+            vnorms.append(vn)
+            vnorms_by_vert[verts.index(co)].append(len(vnorms) - 1)
 
     # creating the face list might be slow, have to do a lot of index()'ing
     faces = list()
@@ -66,7 +70,7 @@ def create_mesh(bm, fore_is_y, bmats):
             this_norm = tuple(bm.vertices[v].normal)
             this_vert = verts.index(this_coord)
             this_face.append(this_vert)
-            these_norms.append(vnorms[this_coord].index(this_norm))
+            these_norms.append(vnorms.index(this_norm))
         faces.append(this_face)
         fvnorms.append(these_norms)
         centers.append(pof.vavg(these_verts)) 
@@ -87,7 +91,8 @@ def create_mesh(bm, fore_is_y, bmats):
         m.flip_v()
 
     m.verts = verts
-    m.vnorms = list(vnorms.values())
+    m.vnorms = vnorms
+    m.vnorms_by_vert = vnorms_by_vert
     m.faces = faces
     m.fvnorms = fvnorms
     m.centers = centers
@@ -117,6 +122,34 @@ def make_sobj_chunk(obj):
         this_chunk.movement_axis = -1
     
     return this_chunk
+
+
+def make_eye_chunk(eye_objs):
+    pass
+    
+    
+def make_thrust_chunk(thruster_objs):
+    pass
+    
+    
+def make_path_chunk(path_objs):
+    pass
+    
+    
+def make_dock_chunk(dock_objs):
+    pass
+    
+    
+def make_gun_chunk(gun_objs, type='GPNT'):
+    pass
+    
+    
+def make_tgun_chunk(gun_objs, type='TGUN'):
+    pass
+    
+    
+def make_acen_chunk(acen_obj):
+    pass
 
 
 def make_hdr_chunk(scene, detail_list, debris_list, mass_ctr, flash_objs):
