@@ -2,3 +2,5 @@
 #vertex norms in tmappoly and flatpoly blocks are currently an index i to a 2d array of normals vert_norms[vert][i] -- should be a 1d array of normals vert_norms[i]
 #will have to change code for detecting smooth groups on import since detecting based on each vert's norm count in defpoints may be inaccurate, since normals don't actually have to be stored with their verts
     # DONE - implemented in DEFPOINTS using vnorms[n] and vnorms_by_vert[vert][i] = n == vnorms[n], calculating num_norms also done in DEFPOINTS
+    
+Testing push script
