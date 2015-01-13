@@ -124,8 +124,33 @@ def make_sobj_chunk(obj):
     return this_chunk
 
 
-def make_eye_chunk(eye_objs):
-    pass
+def make_eye_chunk(eye_objs, fore_is_y, submodels):
+    this_chunk = pof.EyeChunk()
+    this_chunk.num_eyes = len(eye_objs)
+    
+    eye_sobj_nums = list()
+    eye_offsets = list()
+    eye_normals = list()
+    for eye in eye_objs:
+        eye_sobj_nums.append(submodels.index(eye.parent)
+        loc = eye.location
+        if fore_is_y:
+            loc = (loc[0], loc[2], loc[1])
+            znorm = mathutils.Vector((0,0,1))
+        else:
+            znorm = mathutils.Vector((0,1,0))
+        eye_offsets.append(loc)
+        this_norm = znorm.rotate(eye.rotation_quaternion).normalize()
+        if fore_is_y:
+            eye_normals.append(this_norm.xzy)
+        else:
+            eye_normals.append(this_norm)
+    
+    this_chunk.sobj_num = eye_sobj_nums
+    this_chunk.eye_offset = eye_offsets
+    this_chunk.eye_normal = eye_normals
+    
+    return this_chunk
     
     
 def make_thrust_chunk(thruster_objs):
@@ -372,7 +397,7 @@ def export(operator, context, filepath,
                     this_chunk.parent_id = submodels.index(obj.parent)
                 else:
                     this_chunk.parent_id = -1
-                this_chunk.offset = obj.location
+                this_chunk.offset = obj.location    # fore is y?
                 if 'POF model ID' in obj.values():
                     this_chunk.model_id = obj['POF model ID']
                 else:
@@ -388,6 +413,10 @@ def export(operator, context, filepath,
                     this_chunk.model_id = i
                 this_chunk.bsp_tree = None
                 submodel_chunks.append(this_chunk)
+    
+    if export_eye_points:
+        eye_chunk = make_eye_chunk(eye_objs, fore_is_y, submodels)
+        chunk_list.append(eye_chunk)
     
     if pof_handler is None:
         pof_handler = pof.PolyModel(chunk_list + submodel_chunks)
