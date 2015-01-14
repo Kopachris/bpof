@@ -3,4 +3,100 @@
 #will have to change code for detecting smooth groups on import since detecting based on each vert's norm count in defpoints may be inaccurate, since normals don't actually have to be stored with their verts
     # DONE - implemented in DEFPOINTS using vnorms[n] and vnorms_by_vert[vert][i] = n == vnorms[n], calculating num_norms also done in DEFPOINTS
     
-Testing push script
+Should rewrite more object-oriented.  Each type of object stored in the POF file should have an equivalent Python object similar to how we have the Mesh object.  Each of these objects should have methods for converting to/from Blender objects.  We'll try to import bpy and related modules and store BLENDER = False upon catching an ImportError.  If the to/from Blender object methods are called and BLENDER == False, then the method will raise EnvironmentError indicating that the module is not being called from Blender's Python interpreter.
+
+Additionally, the chunk objects themselves should be more generic.  The basic reading and writing logic should be handled by the POFChunk base class using a string format defined by the subclasses.
+
+A simple example:
+
+# new
+class EyeChunk(POFChunk):
+    # chunk definitions begin with the chunk ID
+    CHUNK_ID = b" EYE"
+    
+    # all variables starting with F_ will be treated as format helpers
+    # these tell the interpreter what types to read from the binary
+    # data and stuff into the respective variables
+    # so F_num_eyes will tell it to read an integer into num_eyes
+    F_num_eyes = 'int'
+    F_sobj_num = 'list:int'
+    F_eye_offset = 'list:vector'
+    F_eye_normal = 'list:vector'
+    
+    # the chunk's format
+    # variables/fields are separated by commas
+    # (foo)[bar] construction tells interpreter to read and append to foo bar times
+    # e.g. (foo,bar)[3] would read the binary data as:
+    # foo[0],bar[0],foo[1],bar[1],foo[2],bar[2]
+    # {foo}[bar>0] indicates a conditional, where foo is read only if bar > 0
+    CHUNK_FMT = 'num_eyes,(sobj_num,eye_offset,eye_normal)[num_eyes]'
+    
+    def unpack(self, pof):
+        # unpack chunk data into POFEye objects
+        
+        # make local to reduce access times
+        sobj_num = self.sobj_num
+        eye_offset = self.eye_offset
+        eye_normal = self.eye_normal
+        
+        eyes = list()
+        for i in range(self.num_eyes):
+            sobj = sobj_num[i]
+            offset = eye_offset[i]
+            normal = eye_normal[i]
+            
+            # POFEye.__init__() will take the arguments and validate them against the given PolyModel object (pof)
+            eyes.append(POFEye(pof, sobj, offset, normal))
+            
+        # self.pack() is basically the same, except it takes an iterable of POFEye ojects and does the opposite
+        return eyes
+
+# old  
+class EyeChunk(POFChunk):
+    CHUNK_ID = b" EYE"
+    def read_chunk(self, bin_data):
+        num_eyes = unpack_int(bin_data.read(4))
+        sobj_num = list()
+        eye_offset = list()
+        eye_normal = list()
+
+        for i in range(num_eyes):
+            sobj_num.append(unpack_int(bin_data.read(4)))
+            eye_offset.append(unpack_vector(bin_data.read(12)))
+            eye_normal.append(unpack_vector(bin_data.read(12)))
+
+        self.sobj_num = sobj_num
+        self.eye_offset = eye_offset
+        self.eye_normal = eye_normal
+
+    def write_chunk(self):
+        chunk = self.CHUNK_ID
+        length = len(self)
+        if length:
+            chunk += pack_int(length)
+        else:
+            return False
+
+        logging.debug("Writing eye chunk with size {}...".format(length))
+
+        sobj_num = self.sobj_num
+        eye_offset = self.eye_offset
+        eye_normal = self.eye_normal
+
+        num_eyes = len(eye_normal)
+        chunk += pack_int(num_eyes)
+
+        for i in range(num_eyes):
+            chunk += pack_int(sobj_num[i])
+            chunk += pack_float(eye_offset[i])
+            chunk += pack_float(eye_normal[i])
+
+        return chunk
+
+    def __len__(self):
+        try:
+            chunk_length = 4
+            chunk_length += 28 * len(self.eye_normal)
+            return chunk_length
+        except AttributeError:
+            return 0
